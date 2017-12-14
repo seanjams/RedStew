@@ -3,26 +3,31 @@ import Bank from './bank';
 import Subreddits from './subreddits';
 import Feed from './feed';
 
-const mainStyle = {
-  
+// const mainStyle = {
+//
+// };
+
+const style = {
+  display: 'inline-block',
+  width: '30%'
 };
 
-const bankStyle = {
 
-};
-
-
-export const Root = () => {
-  return (
-    <div style={mainStyle}>
-      <div style={bankStyle}>
-        <Bank />
-        <Subreddits />
+class Root extends React.Component {
+  render() {
+    return (
+      <div>
+        <div style={style}>
+          <Bank />
+          <Subreddits />
+        </div>
+        <Feed />
       </div>
-      <Feed />
-    </div>
-  );
+    );
+  }
 };
+
+export default Root
 
 // class Root extends React.Component {
 //   render() {

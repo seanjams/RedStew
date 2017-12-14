@@ -11,7 +11,7 @@ span, article, footer, time, small {
   color: inherit;
   text-align: inherit;
   text-decoration: inherit;
-  vertical-align: inherit;
+  vertical-align: top;
   box-sizing: inherit;
   background: transparent;
 }
@@ -22,7 +22,7 @@ ul {
 
 img {
   display: block;
-  width: 100%;
+  width: 100px;
   height: auto;
 }
 
