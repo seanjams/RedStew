@@ -13,22 +13,51 @@ class Feed extends React.Component {
     this.state = {
       posts: []
     };
+
+    // this.getNPages = this.getNPages.bind(this);
   }
 
   componentDidMount() {
     this.getPosts();
   }
 
-  getPosts() {
-    const posts = [];
-    fetch('http://www.reddit.com/r/news.json')
-    .then(data => {
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.subreddits.length !== this.props.subreddits.length) {
+      this.getPosts(nextProps.subreddits);
+    }
+  }
+
+  getPosts(subreddits) {
+    if (!subreddits || subreddits.length === 0) {
+      subreddits = [{data: {url: 'r/news'}}];
+    }
+    let posts = [];
+    subreddits.forEach((sub, i) => {
+      const results = [];
+      const url = `http://www.reddit.com/${sub.data.url}.json`;
+      this.getNPages(url, 1, posts);
+    });
+  }
+  //
+  getNPages(url, n, posts, after) {
+    if (n < 1) return null;
+    let currPage = after ? `${url}?after=${after}` : url;
+    // posts = posts || [];
+
+    fetch(currPage).then(data => {
       data.json().then(thing => {
         if (thing.kind === 'Listing') {
+          const pageResults = [];
+          let after = thing.data.after;
           thing.data.children.forEach(child => {
-            posts.push(child);
+            pageResults.push(child);
           });
-          this.setState({posts});
+          posts = posts.concat(pageResults);
+          if (n === 1) {
+            this.setState({posts});
+          } else {
+            this.getNPages(url, n-1, posts, after);
+          }
         } else {
           console.log('not a listing');
         }
@@ -36,16 +65,16 @@ class Feed extends React.Component {
     });
   }
 
+
   renderPosts() {
-    return this.state.posts.map(post => {
+    return this.state.posts.map((post, i) => {
       return (
-        <div>
+        <div key={`post-${i}`}>
           { post.data.title }
         </div>
       )
     });
   }
-
 
   render() {
     return (

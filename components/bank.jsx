@@ -3,21 +3,19 @@ import React from 'react';
 const style = {
   width: '100%',
   height: '100%',
+  fontSize: '1.2em',
   background: 'red',
   display: 'inline-block'
 };
 
 class Bank extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      options: []
-    };
-  }
+  // constructor(props) {
+  //   super(props);
+  // }
 
-  componentDidMount() {
-    this.getPosts();
-  }
+  // componentDidMount() {
+    // this.getPosts();
+  // }
 
   getPosts() {
     const options = [];
@@ -25,10 +23,11 @@ class Bank extends React.Component {
     .then(data => {
       data.json().then(thing => {
         if (thing.kind === 'Listing') {
+
           thing.data.children.forEach(child => {
             options.push(child);
           });
-          this.setState({options});
+          this.props.update('options', options);
         } else {
           console.log('not a listing');
         }
@@ -36,10 +35,17 @@ class Bank extends React.Component {
     });
   }
 
+  handleClick(i) {
+    const { options, subreddits } = this.props;
+    const newOpts = options.slice(0,i).concat(options.slice(i+1));
+    this.props.update('subreddits', subreddits.concat(options[i]));
+    this.props.update('options', newOpts);
+  }
+
   renderPosts() {
-    return this.state.options.map(option => {
+    return this.props.options.map((option, i) => {
       return (
-        <div>
+        <div key={`opt-${i}`} onClick={() => this.handleClick(i)} >
           { option.data.title }
         </div>
       )
@@ -50,6 +56,7 @@ class Bank extends React.Component {
   render() {
     return (
       <div style={style}>
+        <h1 style={{fontSize: '1.5em'}}>Discover:</h1>
         { this.renderPosts() }
       </div>
     );

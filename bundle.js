@@ -18298,6 +18298,8 @@ var _feed2 = _interopRequireDefault(_feed);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
@@ -18316,13 +18318,50 @@ var style = {
 var Root = function (_React$Component) {
   _inherits(Root, _React$Component);
 
-  function Root() {
+  function Root(props) {
     _classCallCheck(this, Root);
 
-    return _possibleConstructorReturn(this, (Root.__proto__ || Object.getPrototypeOf(Root)).apply(this, arguments));
+    var _this = _possibleConstructorReturn(this, (Root.__proto__ || Object.getPrototypeOf(Root)).call(this, props));
+
+    _this.state = {
+      subreddits: [],
+      options: []
+    };
+
+    _this.update = _this.update.bind(_this);
+    return _this;
   }
 
   _createClass(Root, [{
+    key: 'componentDidMount',
+    value: function componentDidMount() {
+      this.getPosts();
+    }
+  }, {
+    key: 'update',
+    value: function update(prop, val) {
+      this.setState(_defineProperty({}, prop, val));
+    }
+  }, {
+    key: 'getPosts',
+    value: function getPosts() {
+      var _this2 = this;
+
+      var options = [];
+      fetch('http://www.reddit.com/subreddits.json').then(function (data) {
+        data.json().then(function (thing) {
+          if (thing.kind === 'Listing') {
+            thing.data.children.forEach(function (child) {
+              options.push(child);
+            });
+            _this2.setState({ options: options });
+          } else {
+            console.log('not a listing');
+          }
+        });
+      });
+    }
+  }, {
     key: 'render',
     value: function render() {
       return _react2.default.createElement(
@@ -18331,10 +18370,10 @@ var Root = function (_React$Component) {
         _react2.default.createElement(
           'div',
           { style: style },
-          _react2.default.createElement(_bank2.default, null),
-          _react2.default.createElement(_subreddits2.default, null)
+          _react2.default.createElement(_subreddits2.default, { options: this.state.options, subreddits: this.state.subreddits, update: this.update }),
+          _react2.default.createElement(_bank2.default, { options: this.state.options, subreddits: this.state.subreddits, update: this.update })
         ),
-        _react2.default.createElement(_feed2.default, null)
+        _react2.default.createElement(_feed2.default, { subreddits: this.state.subreddits })
       );
     }
   }]);
@@ -18384,6 +18423,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var style = {
   width: '100%',
   height: '100%',
+  fontSize: '1.2em',
   background: 'red',
   display: 'inline-block'
 };
@@ -18391,24 +18431,23 @@ var style = {
 var Bank = function (_React$Component) {
   _inherits(Bank, _React$Component);
 
-  function Bank(props) {
+  function Bank() {
     _classCallCheck(this, Bank);
 
-    var _this = _possibleConstructorReturn(this, (Bank.__proto__ || Object.getPrototypeOf(Bank)).call(this, props));
-
-    _this.state = {
-      options: []
-    };
-    return _this;
+    return _possibleConstructorReturn(this, (Bank.__proto__ || Object.getPrototypeOf(Bank)).apply(this, arguments));
   }
 
   _createClass(Bank, [{
-    key: 'componentDidMount',
-    value: function componentDidMount() {
-      this.getPosts();
-    }
-  }, {
     key: 'getPosts',
+
+    // constructor(props) {
+    //   super(props);
+    // }
+
+    // componentDidMount() {
+    // this.getPosts();
+    // }
+
     value: function getPosts() {
       var _this2 = this;
 
@@ -18416,10 +18455,11 @@ var Bank = function (_React$Component) {
       fetch('http://www.reddit.com/subreddits.json').then(function (data) {
         data.json().then(function (thing) {
           if (thing.kind === 'Listing') {
+
             thing.data.children.forEach(function (child) {
               options.push(child);
             });
-            _this2.setState({ options: options });
+            _this2.props.update('options', options);
           } else {
             console.log('not a listing');
           }
@@ -18427,12 +18467,27 @@ var Bank = function (_React$Component) {
       });
     }
   }, {
+    key: 'handleClick',
+    value: function handleClick(i) {
+      var _props = this.props,
+          options = _props.options,
+          subreddits = _props.subreddits;
+
+      var newOpts = options.slice(0, i).concat(options.slice(i + 1));
+      this.props.update('subreddits', subreddits.concat(options[i]));
+      this.props.update('options', newOpts);
+    }
+  }, {
     key: 'renderPosts',
     value: function renderPosts() {
-      return this.state.options.map(function (option) {
+      var _this3 = this;
+
+      return this.props.options.map(function (option, i) {
         return _react2.default.createElement(
           'div',
-          null,
+          { key: 'opt-' + i, onClick: function onClick() {
+              return _this3.handleClick(i);
+            } },
           option.data.title
         );
       });
@@ -18443,6 +18498,11 @@ var Bank = function (_React$Component) {
       return _react2.default.createElement(
         'div',
         { style: style },
+        _react2.default.createElement(
+          'h1',
+          { style: { fontSize: '1.5em' } },
+          'Discover:'
+        ),
         this.renderPosts()
       );
     }
@@ -18480,7 +18540,8 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 var style = {
   width: '100%',
-  height: '100px',
+  height: '100%',
+  fontSize: '1.2em',
   background: 'yellow',
   display: 'inline-block'
 };
@@ -18488,48 +18549,64 @@ var style = {
 var Subreddits = function (_React$Component) {
   _inherits(Subreddits, _React$Component);
 
-  function Subreddits(props) {
+  function Subreddits() {
     _classCallCheck(this, Subreddits);
 
-    var _this = _possibleConstructorReturn(this, (Subreddits.__proto__ || Object.getPrototypeOf(Subreddits)).call(this, props));
-
-    _this.state = {
-      subredditss: []
-    };
-    return _this;
+    return _possibleConstructorReturn(this, (Subreddits.__proto__ || Object.getPrototypeOf(Subreddits)).apply(this, arguments));
   }
 
   _createClass(Subreddits, [{
-    key: 'componentDidMount',
-    value: function componentDidMount() {
-      this.getPosts();
-    }
-  }, {
-    key: 'getPosts',
-    value: function getPosts() {
-      // const subredditss = [];
-      // fetch('http://www.reddit.com/subreddits.json')
-      // .then(data => {
-      //   data.json().then(thing => {
-      //     if (thing.kind === 'Listing') {
-      //       thing.data.children.forEach(child => {
-      //         subredditss.push(child);
-      //       });
-      //       this.setState({subredditss});
-      //     } else {
-      //       console.log('not a listing');
-      //     }
-      //   });
-      // });
+    key: 'handleClick',
+
+    // constructor(props) {
+    // super(props);
+    // this.state = {
+    //   subredditss: []
+    // };
+    // }
+
+    // componentDidMount() {
+    // this.getPosts();
+    // }
+
+    // getPosts() {
+    // const subredditss = [];
+    // fetch('http://www.reddit.com/subreddits.json')
+    // .then(data => {
+    //   data.json().then(thing => {
+    //     if (thing.kind === 'Listing') {
+    //       thing.data.children.forEach(child => {
+    //         subredditss.push(child);
+    //       });
+    //       this.setState({subredditss});
+    //     } else {
+    //       console.log('not a listing');
+    //     }
+    //   });
+    // });
+    // }
+
+    value: function handleClick(i) {
+      var _props = this.props,
+          options = _props.options,
+          subreddits = _props.subreddits;
+
+      var newSubs = subreddits.slice(0, i).concat(subreddits.slice(i + 1));
+      this.props.update('options', options.concat(subreddits[i]));
+      this.props.update('subreddits', newSubs);
     }
   }, {
     key: 'renderPosts',
     value: function renderPosts() {
-      return this.state.subredditss.map(function (subreddits) {
+      var _this2 = this;
+
+      return this.props.subreddits.map(function (subreddit, i) {
         return _react2.default.createElement(
           'div',
-          null,
-          subreddits.data.title
+          { key: 'opt-' + i, onClick: function onClick() {
+              return _this2.handleClick(i);
+            } },
+          subreddit.data.title
         );
       });
     }
@@ -18539,6 +18616,11 @@ var Subreddits = function (_React$Component) {
       return _react2.default.createElement(
         'div',
         { style: style },
+        _react2.default.createElement(
+          'h1',
+          { style: { fontSize: '1.5em' } },
+          'Viewing Posts from:'
+        ),
         this.renderPosts()
       );
     }
@@ -18592,6 +18674,8 @@ var Feed = function (_React$Component) {
     _this.state = {
       posts: []
     };
+
+    // this.getNPages = this.getNPages.bind(this);
     return _this;
   }
 
@@ -18601,18 +18685,52 @@ var Feed = function (_React$Component) {
       this.getPosts();
     }
   }, {
+    key: 'componentWillReceiveProps',
+    value: function componentWillReceiveProps(nextProps) {
+      if (nextProps.subreddits.length !== this.props.subreddits.length) {
+        this.getPosts(nextProps.subreddits);
+      }
+    }
+  }, {
     key: 'getPosts',
-    value: function getPosts() {
+    value: function getPosts(subreddits) {
       var _this2 = this;
 
+      if (!subreddits || subreddits.length === 0) {
+        subreddits = [{ data: { url: 'r/news' } }];
+      }
       var posts = [];
-      fetch('http://www.reddit.com/r/news.json').then(function (data) {
+      subreddits.forEach(function (sub, i) {
+        var results = [];
+        var url = 'http://www.reddit.com/' + sub.data.url + '.json';
+        _this2.getNPages(url, 1, posts);
+      });
+    }
+    //
+
+  }, {
+    key: 'getNPages',
+    value: function getNPages(url, n, posts, after) {
+      var _this3 = this;
+
+      if (n < 1) return null;
+      var currPage = after ? url + '?after=' + after : url;
+      // posts = posts || [];
+
+      fetch(currPage).then(function (data) {
         data.json().then(function (thing) {
           if (thing.kind === 'Listing') {
+            var pageResults = [];
+            var _after = thing.data.after;
             thing.data.children.forEach(function (child) {
-              posts.push(child);
+              pageResults.push(child);
             });
-            _this2.setState({ posts: posts });
+            posts = posts.concat(pageResults);
+            if (n === 1) {
+              _this3.setState({ posts: posts });
+            } else {
+              _this3.getNPages(url, n - 1, posts, _after);
+            }
           } else {
             console.log('not a listing');
           }
@@ -18622,10 +18740,10 @@ var Feed = function (_React$Component) {
   }, {
     key: 'renderPosts',
     value: function renderPosts() {
-      return this.state.posts.map(function (post) {
+      return this.state.posts.map(function (post, i) {
         return _react2.default.createElement(
           'div',
-          null,
+          { key: 'post-' + i },
           post.data.title
         );
       });
